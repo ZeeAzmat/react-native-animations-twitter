@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, Text, Image, View, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, Image, View, ScrollView, Animated } from 'react-native';
 
 HEADER_MIN_HEIGHT = 70;
 HEADER_MAX_HEIGHT = 120;
@@ -7,21 +7,61 @@ PROFILE_IMAGE_MIN_HEIGHT = 40;
 PROFILE_IMAGE_MAX_HEIGHT = 80;
 
 export default function App() {
+  const [scrollY, setScrollY] = useState(new Animated.Value(0));
+
+  const headerHeight = scrollY.interpolate({
+    inputRange: [0, HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT],
+    outputRange: [HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT],
+    extrapolate: 'clamp',
+  })
+
+  const profileImageHeight = scrollY.interpolate({
+    inputRange: [0, HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT],
+    outputRange: [PROFILE_IMAGE_MAX_HEIGHT, PROFILE_IMAGE_MIN_HEIGHT],
+    extrapolate: 'clamp',
+  })
+
+  const profileImageMarginTop = scrollY.interpolate({
+    inputRange: [0, HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT],
+    outputRange: [HEADER_MAX_HEIGHT - (PROFILE_IMAGE_MAX_HEIGHT / 2), HEADER_MAX_HEIGHT + 5],
+    extrapolate: 'clamp',
+  })
+
+  const headerZIndex = scrollY.interpolate({
+    inputRange: [0, HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  })
+
+  const headerTitleBottom = scrollY.interpolate({
+    inputRange: [0, HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT, HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT + 5 + PROFILE_IMAGE_MIN_HEIGHT, HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT + 5 + PROFILE_IMAGE_MIN_HEIGHT + 26],
+    outputRange: [-20, -20, -20, 0],
+    extrapolate: 'clamp',
+  })
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-      </View>
+      <Animated.View style={{ ...styles.header, ...{ height: headerHeight, zIndex: headerZIndex } }} >
+        <Animated.View style={{ position: 'absolute', bottom: headerTitleBottom }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: 'white' }}>Twitter Profile</Text>
+        </Animated.View>
+      </Animated.View>
 
-      <ScrollView style={{ flex: 1 }}>
-        <View style={styles.image}>
+      <ScrollView
+        style={{ flex: 1 }}
+        scrollEventThrottle={16}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }])}
+      >
+        <Animated.View style={{ ...styles.image, ...{ height: profileImageHeight, width: profileImageHeight, marginTop: profileImageMarginTop } }}>
           <Image source={require('./assets/dp.jpg')} style={{ flex: 1, width: null, height: null }} />
-        </View>
+        </Animated.View>
 
         <View>
           <Text style={{ flex: 1, fontWeight: 'bold', fontSize: 26, paddingLeft: 10, }} >
             Twitter Profile
           </Text>
         </View>
+        <View style={{ height: 1000 }}></View>
       </ScrollView>
     </View>
   );
@@ -38,7 +78,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     position: 'absolute',
-    height: HEADER_MAX_HEIGHT,
+    alignItems: 'center',
     backgroundColor: 'lightskyblue',
   },
   image: {
@@ -46,9 +86,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     overflow: 'hidden',
     borderColor: 'white',
-    width: PROFILE_IMAGE_MAX_HEIGHT,
-    height: PROFILE_IMAGE_MAX_HEIGHT,
-    borderRadius: PROFILE_IMAGE_MAX_HEIGHT/2,
-    marginTop: HEADER_MAX_HEIGHT - PROFILE_IMAGE_MAX_HEIGHT/2,
+    borderRadius: PROFILE_IMAGE_MAX_HEIGHT / 2,
+    marginTop: HEADER_MAX_HEIGHT - PROFILE_IMAGE_MAX_HEIGHT / 2,
   }
 });
